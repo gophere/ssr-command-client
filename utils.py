@@ -7,10 +7,12 @@ import base64
 import zipfile
 import configparser
 import socket
+import socks
 import re
 import os
 import datetime
 import qrcode
+import speedtest
 from prettytable import PrettyTable
 from colorama import init, Fore, Back, Style
 
@@ -289,3 +291,25 @@ def print_qrcode(data):
     img = qr.make_image()
     img.save('qrcode.png')
     qr.print_ascii(tty=True, invert=True)
+
+# 测速模块函数
+def ssr_speed_test(port, ssr_info_dict):
+    os.system(ssr_info_dict['startCmd'])
+    socks.set_default_proxy(socks.SOCKS5, get_config_value('LOCAL_ADDRESS'), port)
+    socket.socket = socks.socksocket
+    try:
+        s = speedtest.Speedtest()
+        s.upload()
+        s.download()
+    except:
+        download = 0
+        upload = 0
+    else:
+        result = s.results.dict()
+        download = round(result['download'] / 1000.0 / 1000.0, 2)
+        upload = round(result['upload'] / 1000.0 / 1000.0, 2)
+    print("{0} Download: {1} Upload: {2}".format(ssr_info_dict['remarks'], download, upload))
+    ssr_info_dict['download'] = download
+    ssr_info_dict['upload'] = upload
+    os.system(ssr_info_dict['stopCmd'])
+    return ssr_info_dict
